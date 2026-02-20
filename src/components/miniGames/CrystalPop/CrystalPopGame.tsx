@@ -49,9 +49,28 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void; answerMode?: Answer
   const [feedback, setFeedback] = useState<DisplayFeedback | null>(null);
   const [typedAnswer, setTypedAnswer] = useState("");
   const [triggerConfetti, setTriggerConfetti] = useState(false);
+  const [confettiOrigin, setConfettiOrigin] = useState({ x: "50%", y: "40%" });
   const timerInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skillDeltaRef = useRef(0);
+  const questionCardRef = useRef<HTMLDivElement | null>(null);
+
+  const updateConfettiOrigin = useCallback(() => {
+    if (!questionCardRef.current) {
+      return;
+    }
+
+    const rect = questionCardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const viewportWidth = window.innerWidth || 1;
+    const viewportHeight = window.innerHeight || 1;
+
+    setConfettiOrigin({
+      x: `${(centerX / viewportWidth) * 100}%`,
+      y: `${(centerY / viewportHeight) * 100}%`,
+    });
+  }, []);
 
   // Initialize session on mount
   useEffect(() => {
@@ -88,6 +107,16 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void; answerMode?: Answer
       if (timerInterval.current) clearInterval(timerInterval.current);
     };
   }, [gameState, session]);
+
+  useEffect(() => {
+    updateConfettiOrigin();
+
+    const onResize = () => updateConfettiOrigin();
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, [updateConfettiOrigin]);
 
   /**
    * Handle session expiration
@@ -219,6 +248,10 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void; answerMode?: Answer
     onExit?.();
   }, [result, playerStore, onExit]);
 
+  useEffect(() => {
+    updateConfettiOrigin();
+  }, [updateConfettiOrigin, currentQuestion?.id, gameState]);
+
   if (gameState === "initializing" || !session) {
     return (
       <div className="w-full h-screen bg-gradient-to-b from-blue-600 to-blue-800 flex items-center justify-center">
@@ -242,7 +275,11 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void; answerMode?: Answer
     >
       <div className="absolute inset-0 bg-white/50 pointer-events-none" />
       <div className="relative z-10 w-full h-full flex flex-col">
-        <ConfettiExplosion trigger={triggerConfetti} />
+        <ConfettiExplosion
+          trigger={triggerConfetti}
+          originX={confettiOrigin.x}
+          originY={confettiOrigin.y}
+        />
       {/* Header - Score and Combo */}
       <div className="flex justify-between items-center mb-6">
         <motion.div className="text-white bg-white/40 backdrop-blur-sm rounded-lg px-4 py-2">
@@ -276,7 +313,10 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void; answerMode?: Answer
 
       {/* Question Display */}
       <div className="flex-1 flex items-center justify-center mb-8">
-        <div className="bg-white/85 backdrop-blur-sm rounded-xl px-8 py-6 shadow-lg">
+        <div
+          ref={questionCardRef}
+          className="bg-white/85 backdrop-blur-sm rounded-xl px-8 py-6 shadow-lg"
+        >
           <QuestionDisplay question={currentQuestion} />
         </div>
       </div>

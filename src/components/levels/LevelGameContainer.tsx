@@ -30,10 +30,29 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
   const [typedAnswer, setTypedAnswer] = useState("");
   const [triggerConfetti, setTriggerConfetti] = useState(false);
   const [triggerCompletionConfetti, setTriggerCompletionConfetti] = useState(false);
+  const [confettiOrigin, setConfettiOrigin] = useState({ x: "50%", y: "35%" });
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completionConfettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const questionCardRef = useRef<HTMLDivElement | null>(null);
+
+  const updateConfettiOrigin = useCallback(() => {
+    if (!questionCardRef.current) {
+      return;
+    }
+
+    const rect = questionCardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const viewportWidth = window.innerWidth || 1;
+    const viewportHeight = window.innerHeight || 1;
+
+    setConfettiOrigin({
+      x: `${(centerX / viewportWidth) * 100}%`,
+      y: `${(centerY / viewportHeight) * 100}%`,
+    });
+  }, []);
 
   const finalizeSession = useCallback(
     (sessionToEnd: LevelSession) => {
@@ -101,6 +120,16 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
     };
   }, [session, phase, finalizeSession]);
 
+  useEffect(() => {
+    updateConfettiOrigin();
+
+    const onResize = () => updateConfettiOrigin();
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, [updateConfettiOrigin]);
+
   const handleAnswer = useCallback(
     (value: number) => {
       if (!session || phase !== "playing") {
@@ -159,12 +188,16 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
     typeof question?.correctAnswer === "number" &&
     Number.isFinite(question.correctAnswer);
 
+  useEffect(() => {
+    updateConfettiOrigin();
+  }, [updateConfettiOrigin, question?.id, phase]);
+
   return (
     <div className="w-full h-screen bg-gradient-to-b from-blue-700 to-purple-800 p-4 text-white">
       <ConfettiExplosion
         trigger={triggerConfetti}
-        originX="50%"
-        originY="35%"
+        originX={confettiOrigin.x}
+        originY={confettiOrigin.y}
       />
       <ConfettiExplosion
         trigger={triggerCompletionConfetti}
@@ -172,8 +205,8 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
         radiusDistance={440}
         fontSizeRem={3.6}
         durationMs={2200}
-        originX="50%"
-        originY="35%"
+        originX={confettiOrigin.x}
+        originY={confettiOrigin.y}
       />
       <div className="max-w-4xl mx-auto h-full flex flex-col">
         <div className="flex justify-between items-center mb-4">
@@ -197,7 +230,10 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
           <div className="text-sm text-gray-200 mt-1">Accuracy: {stats.accuracy}%</div>
         </div>
 
-        <div className="bg-white/90 text-gray-900 rounded-xl p-8 text-center mb-4">
+        <div
+          ref={questionCardRef}
+          className="bg-white/90 text-gray-900 rounded-xl p-8 text-center mb-4"
+        >
           <div className="text-5xl font-bold">{question?.prompt}</div>
         </div>
 

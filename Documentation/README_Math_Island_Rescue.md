@@ -139,6 +139,41 @@ All math logic is centralized in:
 
 ------------------------------------------------------------------------
 
+## 📈 Level Difficulty Progression (1--20)
+
+Current level progression is designed for smooth, developmentally
+appropriate growth:
+
+-   Levels 1--5: transition from Grade 1 to Grade 2
+-   Levels 6--20: transition from Grade 2 to Grade 6
+-   Required correct answers: 10 per level
+-   Time limits scale by +30s every 2 levels
+
+| Level | Grade Mix           | Time Limit |
+| ----- | ------------------- | ---------- |
+| 1     | Grade 1             | 90s        |
+| 2     | Grade 1 + Grade 2   | 90s        |
+| 3     | Grade 1 + Grade 2   | 120s       |
+| 4     | Grade 2             | 120s       |
+| 5     | Grade 2             | 150s       |
+| 6     | Grade 2             | 150s       |
+| 7     | Grade 2 + Grade 3   | 180s       |
+| 8     | Grade 3             | 180s       |
+| 9     | Grade 3             | 210s       |
+| 10    | Grade 3 + Grade 4   | 210s       |
+| 11    | Grade 4             | 240s       |
+| 12    | Grade 4             | 240s       |
+| 13    | Grade 4 + Grade 5   | 270s       |
+| 14    | Grade 5             | 270s       |
+| 15    | Grade 5             | 300s       |
+| 16    | Grade 5 + Grade 6   | 300s       |
+| 17    | Grade 6             | 330s       |
+| 18    | Grade 6             | 330s       |
+| 19    | Grade 6             | 360s       |
+| 20    | Grade 6             | 360s       |
+
+------------------------------------------------------------------------
+
 ## 💾 Persistence
 
 Player progress is stored locally using LocalStorage.

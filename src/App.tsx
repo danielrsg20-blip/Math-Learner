@@ -2,7 +2,10 @@ import { useState } from "react";
 import { CrystalPopGame } from "./components/miniGames/CrystalPop";
 import { LevelGameContainer, LevelSelectGrid } from "./components/levels";
 import { usePlayerStore } from "./store/usePlayerStore";
+import { useLevelsStore } from "./store/useLevelsStore";
 import type { AnswerMode } from "./types/math";
+import PracticeLevelSelect from "./components/practice/PracticeLevelSelect";
+import PracticeGame from "./components/practice/PracticeGame";
 
 /**
  * Main App Component
@@ -11,14 +14,23 @@ import type { AnswerMode } from "./types/math";
 function App() {
   const answerMode = usePlayerStore((state) => state.answerMode);
   const setAnswerMode = usePlayerStore((state) => state.setAnswerMode);
+  const progressByLevel = useLevelsStore((state) => state.progressByLevel);
+  const recordPracticeCompletion = useLevelsStore(
+    (state) => state.recordPracticeCompletion
+  );
   const [currentPage, setCurrentPage] = useState<
-    "home" | "crystal-pop" | "levels" | "level-play"
+    "home" | "crystal-pop" | "levels" | "level-play" | "practice" | "practice-play"
   >("home");
   const [selectedLevel, setSelectedLevel] = useState(1);
+  const [selectedPracticeLevel, setSelectedPracticeLevel] = useState(1);
   const [activeLevelAnswerMode, setActiveLevelAnswerMode] =
     useState<AnswerMode>("multipleChoice");
   const [activeCrystalPopAnswerMode, setActiveCrystalPopAnswerMode] =
     useState<AnswerMode>("multipleChoice");
+
+  const highestUnlockedLevel = Object.values(progressByLevel)
+    .filter((progress) => progress.status !== "locked")
+    .reduce((maximum, progress) => Math.max(maximum, progress.levelNumber), 1);
 
   return (
     <div className="w-full h-screen">
@@ -84,6 +96,28 @@ function App() {
         />
       )}
 
+      {currentPage === "practice" && (
+        <PracticeLevelSelect
+          unlockedLevels={highestUnlockedLevel}
+          onBack={() => setCurrentPage("home")}
+          onSelectLevel={(levelId) => {
+            setSelectedPracticeLevel(levelId);
+            setCurrentPage("practice-play");
+          }}
+        />
+      )}
+
+      {currentPage === "practice-play" && (
+        <PracticeGame
+          levelId={selectedPracticeLevel}
+          onBack={() => setCurrentPage("practice")}
+          onComplete={(result) => {
+            recordPracticeCompletion(result.levelId, Date.now());
+            setCurrentPage("practice");
+          }}
+        />
+      )}
+
       {currentPage === "home" && (
         <div className="w-full h-screen bg-gradient-to-b from-purple-600 to-blue-600 flex flex-col items-center justify-center gap-8">
           <h1 className="text-5xl font-bold text-white">
@@ -126,6 +160,12 @@ function App() {
             className="bg-blue-500 hover:bg-blue-600 text-black font-bold py-4 px-8 rounded-lg text-2xl transition-colors"
           >
             Play Crystal Pop
+          </button>
+          <button
+            onClick={() => setCurrentPage("practice")}
+            className="bg-teal-500 hover:bg-teal-600 text-black font-bold py-4 px-8 rounded-lg text-2xl transition-colors"
+          >
+            Practice Mode
           </button>
         </div>
       )}

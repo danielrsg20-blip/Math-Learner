@@ -18,6 +18,7 @@ interface LevelsStore {
   isLevelUnlocked: (levelNumber: number) => boolean;
   getLevelProgress: (levelNumber: number) => LevelProgress;
   recordAttempt: (result: LevelAttemptResult) => void;
+  recordPracticeCompletion: (levelNumber: number, completedAt: number) => void;
   resetLevels: () => void;
 }
 
@@ -192,6 +193,40 @@ export const useLevelsStore = create<LevelsStore>()(
           return {
             progressByLevel: updatedProgress,
             attempts: [...state.attempts, result],
+          };
+        });
+      },
+
+      recordPracticeCompletion: (levelNumber: number, completedAt: number) => {
+        set((state) => {
+          const current = state.progressByLevel[levelNumber];
+          if (!current) {
+            return state;
+          }
+
+          const updatedCurrent: LevelProgress = {
+            ...current,
+            status: "completed",
+            attemptsCount: current.attemptsCount + 1,
+            completedAt,
+          };
+
+          const updatedProgress = {
+            ...state.progressByLevel,
+            [levelNumber]: updatedCurrent,
+          };
+
+          const nextLevel = levelNumber + 1;
+          const nextLevelProgress = updatedProgress[nextLevel];
+          if (nextLevelProgress && nextLevelProgress.status === "locked") {
+            updatedProgress[nextLevel] = {
+              ...nextLevelProgress,
+              status: "unlocked",
+            };
+          }
+
+          return {
+            progressByLevel: updatedProgress,
           };
         });
       },

@@ -7,7 +7,7 @@ import type { GradeTag, Operation } from "../types/math";
 
 const DEFAULT_REQUIRED_CORRECT = 10;
 const DEFAULT_TIME_LIMIT_SECONDS = 90;
-const TIME_INCREMENT_EVERY_TWO_LEVELS_SECONDS = 60;
+const TIME_INCREMENT_EVERY_TWO_LEVELS_SECONDS = 30;
 
 function getTimeLimitForLevel(levelNumber: number): number {
   const pairIndex = Math.floor((levelNumber - 1) / 2);
@@ -35,25 +35,25 @@ function createLevel(
 
 export const LEVEL_DEFINITIONS: LevelDefinition[] = [
   createLevel(1, ["grade1"], ["addition"]),
-  createLevel(2, ["grade1", "grade2"], ["addition", "subtraction"]),
-  createLevel(3, ["grade2"], ["addition", "subtraction"]),
-  createLevel(4, ["grade2", "grade3"], ["addition", "subtraction", "multiplication"]),
-  createLevel(5, ["grade3"], ["addition", "subtraction", "multiplication"]),
-  createLevel(6, ["grade3", "grade4"], ["addition", "subtraction", "multiplication"]),
-  createLevel(7, ["grade4"], ["addition", "subtraction", "multiplication"]),
-  createLevel(8, ["grade4", "grade5"], ["addition", "subtraction", "multiplication"]),
-  createLevel(9, ["grade5"], ["addition", "subtraction", "multiplication"]),
-  createLevel(10, ["grade5", "grade6"], ["addition", "subtraction", "multiplication"]),
-  createLevel(11, ["grade6"], ["subtraction", "multiplication"]),
-  createLevel(12, ["grade5", "grade6"], ["addition", "subtraction", "multiplication"]),
-  createLevel(13, ["grade6"], ["subtraction", "multiplication"]),
-  createLevel(14, ["grade4", "grade6"], ["subtraction", "multiplication"]),
-  createLevel(15, ["grade6"], ["multiplication"]),
-  createLevel(16, ["grade5", "grade6"], ["subtraction", "multiplication"]),
-  createLevel(17, ["grade6"], ["multiplication"]),
-  createLevel(18, ["grade4", "grade5", "grade6"], ["subtraction", "multiplication"]),
-  createLevel(19, ["grade6"], ["multiplication"]),
-  createLevel(20, ["grade5", "grade6"], ["subtraction", "multiplication"]),
+  createLevel(2, ["grade1", "grade2"], ["addition"]),
+  createLevel(3, ["grade1", "grade2"], ["addition", "subtraction"]),
+  createLevel(4, ["grade2"], ["addition", "subtraction"]),
+  createLevel(5, ["grade2"], ["addition", "subtraction"]),
+  createLevel(6, ["grade2"], ["addition", "subtraction"]),
+  createLevel(7, ["grade2", "grade3"], ["addition", "subtraction"]),
+  createLevel(8, ["grade3"], ["addition", "subtraction"]),
+  createLevel(9, ["grade3"], ["addition", "subtraction"]),
+  createLevel(10, ["grade3", "grade4"], ["addition", "subtraction", "multiplication"]),
+  createLevel(11, ["grade4"], ["addition", "subtraction", "multiplication"]),
+  createLevel(12, ["grade4"], ["addition", "subtraction", "multiplication"]),
+  createLevel(13, ["grade4", "grade5"], ["addition", "subtraction", "multiplication"]),
+  createLevel(14, ["grade5"], ["addition", "subtraction", "multiplication"]),
+  createLevel(15, ["grade5"], ["addition", "subtraction", "multiplication"]),
+  createLevel(16, ["grade5", "grade6"], ["addition", "subtraction", "multiplication"]),
+  createLevel(17, ["grade6"], ["addition", "subtraction", "multiplication"]),
+  createLevel(18, ["grade6"], ["addition", "subtraction", "multiplication"]),
+  createLevel(19, ["grade6"], ["addition", "subtraction", "multiplication"]),
+  createLevel(20, ["grade6"], ["addition", "subtraction", "multiplication"]),
 ];
 
 export function getLevelDefinition(levelNumber: number): LevelDefinition {
