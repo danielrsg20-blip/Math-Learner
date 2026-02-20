@@ -3,10 +3,12 @@ import { LevelSession } from "../../engine/levelSessionEngine";
 import { getLevelDefinition } from "../../engine/levelConfig";
 import { useLevelsStore } from "../../store/useLevelsStore";
 import type { LevelAttemptResult } from "../../types/levels";
+import type { AnswerMode } from "../../types/math";
 import { ConfettiExplosion } from "../miniGames/CrystalPop/ConfettiExplosion";
 
 interface LevelGameContainerProps {
   levelNumber: number;
+  answerMode: AnswerMode;
   onBack: () => void;
 }
 
@@ -14,6 +16,7 @@ type Phase = "loading" | "playing" | "finished";
 
 export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
   levelNumber,
+  answerMode,
   onBack,
 }) => {
   const level = useMemo(() => getLevelDefinition(levelNumber), [levelNumber]);
@@ -24,6 +27,7 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
   const [remainingMs, setRemainingMs] = useState(level.timeLimitSeconds * 1000);
   const [result, setResult] = useState<LevelAttemptResult | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [typedAnswer, setTypedAnswer] = useState("");
   const [triggerConfetti, setTriggerConfetti] = useState(false);
   const [triggerCompletionConfetti, setTriggerCompletionConfetti] = useState(false);
 
@@ -57,10 +61,11 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
   );
 
   useEffect(() => {
-    const newSession = new LevelSession(level);
+    const newSession = new LevelSession(level, answerMode);
     newSession.initialize();
     setSession(newSession);
     setPhase("playing");
+    setTypedAnswer("");
 
     return () => {
       if (intervalRef.current) {
@@ -73,7 +78,7 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
         clearTimeout(completionConfettiTimeoutRef.current);
       }
     };
-  }, [level]);
+  }, [level, answerMode]);
 
   useEffect(() => {
     if (!session || phase !== "playing") {
@@ -104,6 +109,7 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
 
       const answerResult = session.submitAnswer(value);
       setFeedback(answerResult.isCorrect ? "correct" : "wrong");
+      setTypedAnswer("");
 
       if (answerResult.isCorrect) {
         setTriggerConfetti(true);
@@ -124,6 +130,19 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
     [session, phase, finalizeSession]
   );
 
+  const handleNumberSubmit = useCallback(() => {
+    if (typedAnswer.trim() === "") {
+      return;
+    }
+
+    const numericValue = Number(typedAnswer);
+    if (!Number.isFinite(numericValue)) {
+      return;
+    }
+
+    handleAnswer(numericValue);
+  }, [typedAnswer, handleAnswer]);
+
   if (phase === "loading" || !session) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-blue-900 text-white text-2xl font-bold">
@@ -135,6 +154,10 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
   const question = session.getCurrentQuestion();
   const stats = session.getStats();
   const secondsRemaining = Math.ceil(remainingMs / 1000);
+  const canUseNumberEntry =
+    answerMode === "numberEntry" &&
+    typeof question?.correctAnswer === "number" &&
+    Number.isFinite(question.correctAnswer);
 
   return (
     <div className="w-full h-screen bg-gradient-to-b from-blue-700 to-purple-800 p-4 text-white">
@@ -178,17 +201,43 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
           <div className="text-5xl font-bold">{question?.prompt}</div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto w-full">
-          {question?.multipleChoiceOptions?.map((answer) => (
+        {canUseNumberEntry ? (
+          <div className="max-w-md mx-auto w-full flex gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              value={typedAnswer}
+              onChange={(event) => setTypedAnswer(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  handleNumberSubmit();
+                }
+              }}
+              className="flex-1 bg-white text-gray-900 text-2xl font-bold py-4 px-4 rounded-lg"
+              placeholder="Type answer"
+              disabled={phase !== "playing"}
+            />
             <button
-              key={`${question.id}-${answer}`}
-              onClick={() => handleAnswer(answer)}
-              className="bg-white text-gray-900 text-3xl font-bold py-6 rounded-lg hover:bg-blue-100 transition-colors"
+              onClick={handleNumberSubmit}
+              disabled={phase !== "playing" || typedAnswer.trim() === ""}
+              className="bg-blue-500 hover:bg-blue-600 text-black font-bold py-4 px-6 rounded-lg disabled:opacity-50"
             >
-              {answer}
+              Submit
             </button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto w-full">
+            {question?.multipleChoiceOptions?.map((answer) => (
+              <button
+                key={`${question.id}-${answer}`}
+                onClick={() => handleAnswer(answer)}
+                className="bg-white text-gray-900 text-3xl font-bold py-6 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                {answer}
+              </button>
+            ))}
+          </div>
+        )}
 
         {feedback && phase === "playing" && (
           <div className={`text-center mt-4 text-lg font-bold ${feedback === "correct" ? "text-green-200" : "text-red-200"}`}>
@@ -202,6 +251,17 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
               <h2 className="text-2xl font-bold text-white text-center">
                 {result.passed ? "Level Complete!" : "Time Up"}
               </h2>
+              <div className="flex justify-center">
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                    result.answerMode === "numberEntry"
+                      ? "bg-emerald-500/30 text-emerald-200 border-emerald-300/40"
+                      : "bg-blue-500/30 text-blue-100 border-blue-300/40"
+                  }`}
+                >
+                  Mode: {result.answerMode === "numberEntry" ? "Number Entry" : "Multiple Choice"}
+                </span>
+              </div>
               <div className="text-white">
                 <div>Score: {result.score}</div>
                 <div>Accuracy: {result.accuracy}%</div>

@@ -3,6 +3,7 @@
  */
 
 import type { DifficultyTier } from "./math";
+import type { AnswerMode } from "./math";
 
 /**
  * Persistent player statistics
@@ -11,6 +12,7 @@ export interface PlayerStats {
   skillRating: number;
   gems: number;
   stars: number;
+  answerMode: AnswerMode;
   unlockedItems: string[];
   totalQuestionsAnswered: number;
   totalCorrectAnswers: number;

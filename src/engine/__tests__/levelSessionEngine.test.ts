@@ -57,4 +57,18 @@ describe("LevelSession", () => {
       }
     }
   });
+
+  it("uses number-entry mode without multiple choice options", () => {
+    const level = { ...getLevelDefinition(1), requiredCorrectAnswers: 1, timeLimitSeconds: 30 };
+    const session = new LevelSession(level, "numberEntry");
+    session.initialize();
+
+    const question = session.getCurrentQuestion();
+    expect(question).toBeTruthy();
+    expect(question?.multipleChoiceOptions).toBeUndefined();
+
+    session.submitAnswer(question!.correctAnswer);
+    const result = session.endSession();
+    expect(result.answerMode).toBe("numberEntry");
+  });
 });

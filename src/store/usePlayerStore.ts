@@ -7,9 +7,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { PlayerStats } from "../types/player";
 import { getDifficulty } from "../engine/difficultyEngine";
-import type { DifficultyTier } from "../types/math";
+import type { AnswerMode, DifficultyTier } from "../types/math";
 
 interface PlayerStore extends PlayerStats {
+  setAnswerMode: (mode: AnswerMode) => void;
   updateSkill: (delta: number) => void;
   addGems: (amount: number) => void;
   addStars: (amount: number) => void;
@@ -23,6 +24,7 @@ const INITIAL_STATE: PlayerStats = {
   skillRating: 1000,
   gems: 0,
   stars: 0,
+  answerMode: "multipleChoice",
   unlockedItems: [],
   totalQuestionsAnswered: 0,
   totalCorrectAnswers: 0,
@@ -34,6 +36,10 @@ export const usePlayerStore = create<PlayerStore>()(
   persist(
     (set, get) => ({
       ...INITIAL_STATE,
+
+      setAnswerMode: (mode: AnswerMode) => {
+        set({ answerMode: mode });
+      },
 
       updateSkill: (delta: number) => {
         set((state) => ({
@@ -90,7 +96,20 @@ export const usePlayerStore = create<PlayerStore>()(
     }),
     {
       name: "player-store", // localStorage key
-      version: 1,
+      version: 2,
+      migrate: (persistedState: unknown) => {
+        const state = persistedState as Partial<PlayerStats> | undefined;
+        if (!state) {
+          return INITIAL_STATE;
+        }
+
+        return {
+          ...INITIAL_STATE,
+          ...state,
+          answerMode:
+            state.answerMode === "numberEntry" ? "numberEntry" : "multipleChoice",
+        };
+      },
     }
   )
 );

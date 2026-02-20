@@ -14,4 +14,17 @@ describe("Level Config", () => {
     expect(getLevelDefinition(5).gradeTags).toEqual(["grade3"]);
     expect(getLevelDefinition(10).gradeTags).toEqual(["grade5", "grade6"]);
   });
+
+  it("should increase time limits by 60 seconds every two levels", () => {
+    expect(getLevelDefinition(1).timeLimitSeconds).toBe(90);
+    expect(getLevelDefinition(2).timeLimitSeconds).toBe(90);
+    expect(getLevelDefinition(3).timeLimitSeconds).toBe(150);
+    expect(getLevelDefinition(4).timeLimitSeconds).toBe(150);
+    expect(getLevelDefinition(5).timeLimitSeconds).toBe(210);
+    expect(getLevelDefinition(6).timeLimitSeconds).toBe(210);
+    expect(getLevelDefinition(7).timeLimitSeconds).toBe(270);
+    expect(getLevelDefinition(8).timeLimitSeconds).toBe(270);
+    expect(getLevelDefinition(9).timeLimitSeconds).toBe(330);
+    expect(getLevelDefinition(10).timeLimitSeconds).toBe(330);
+  });
 });

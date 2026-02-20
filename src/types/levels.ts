@@ -2,7 +2,13 @@
  * Levels feature type definitions
  */
 
-import type { GradeTag, MathQuestion, Operation } from "./math";
+import type { AnswerMode, GradeTag, MathQuestion, Operation } from "./math";
+
+export interface LevelModeHighScore {
+  bestScore: number;
+  bestAccuracy: number;
+  bestCompletionTimeMs: number | null;
+}
 
 export interface LevelDefinition {
   id: string;
@@ -24,12 +30,14 @@ export interface LevelProgress {
   bestScore: number;
   bestAccuracy: number;
   bestCompletionTimeMs: number | null;
+  bestByMode: Record<AnswerMode, LevelModeHighScore>;
   completedAt: number | null;
 }
 
 export interface LevelAttemptResult {
   levelId: string;
   levelNumber: number;
+  answerMode: AnswerMode;
   score: number;
   accuracy: number;
   completionTimeMs: number;

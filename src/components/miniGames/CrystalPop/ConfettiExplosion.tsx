@@ -18,6 +18,19 @@ interface CandyParticle {
   delay: number;
 }
 
+const CONFETTI_THEME_EMOJIS: string[][] = [
+  ["🍬", "🍭", "🍫", "🍩", "🧁", "🍰", "🎈"],
+  ["🏐", "🏐", "🏐", "🏐", "🏐"],
+  ["🥤", "🥤", "🧃", "🥤", "🧋"],
+  ["🍃", "🍂", "🍁", "🌿", "☘️"],
+];
+
+function randomTheme(): string[] {
+  return CONFETTI_THEME_EMOJIS[
+    Math.floor(Math.random() * CONFETTI_THEME_EMOJIS.length)
+  ];
+}
+
 /**
  * ConfettiExplosion Component
  * Displays candy emoji particles radiating from center when triggered
@@ -32,10 +45,10 @@ export const ConfettiExplosion: React.FC<ConfettiExplosionProps> = ({
   originY = "50%",
 }) => {
   const [candyParticles, setCandyParticles] = useState<CandyParticle[]>([]);
-  const candyEmojis = ["🍬", "🍭", "🍫", "🍩", "🧁", "🍰", "🎈"];
 
   useEffect(() => {
     if (!trigger) return;
+    const activeTheme = randomTheme();
 
     // Create candy emoji particles radiating from center
     const particles: CandyParticle[] = [];
@@ -48,7 +61,7 @@ export const ConfettiExplosion: React.FC<ConfettiExplosionProps> = ({
       
       particles.push({
         id: i,
-        emoji: candyEmojis[Math.floor(Math.random() * candyEmojis.length)],
+        emoji: activeTheme[Math.floor(Math.random() * activeTheme.length)],
         endX,
         endY,
         delay: Math.random() * 0.05,
@@ -62,7 +75,7 @@ export const ConfettiExplosion: React.FC<ConfettiExplosionProps> = ({
     }, durationMs);
 
     return () => clearTimeout(timer);
-  }, [trigger]);
+  }, [trigger, particleCount, radiusDistance, durationMs]);
 
   if (candyParticles.length === 0) return null;
 

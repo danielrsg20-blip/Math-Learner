@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { CrystalPopSession } from "../../../engine/crystalPopEngine";
 import { usePlayerStore } from "../../../store/usePlayerStore";
-import type { MathQuestion } from "../../../types/math";
+import type { AnswerMode, MathQuestion } from "../../../types/math";
 import type { CrystalPopSessionResult } from "../../../types/player";
 import { ComboCounter } from "./ComboCounter";
 import { SessionTimer } from "./SessionTimer";
@@ -23,7 +23,8 @@ interface DisplayFeedback {
  * CrystalPopGame Component
  * Main container for the 90-second Crystal Pop arcade mini-game
  */
-export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
+export const CrystalPopGame: React.FC<{ onExit?: () => void; answerMode?: AnswerMode }> = ({
+  answerMode = "multipleChoice",
   onExit,
 }) => {
   const playerStore = usePlayerStore();
@@ -46,6 +47,7 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
 
   // Feedback visibility tracking
   const [feedback, setFeedback] = useState<DisplayFeedback | null>(null);
+  const [typedAnswer, setTypedAnswer] = useState("");
   const [triggerConfetti, setTriggerConfetti] = useState(false);
   const timerInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,7 +56,8 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
   // Initialize session on mount
   useEffect(() => {
     const newSession = new CrystalPopSession(
-      playerStore.getAdaptiveDifficulty()
+      playerStore.getAdaptiveDifficulty(),
+      answerMode
     );
     newSession.initialize();
     setSession(newSession);
@@ -65,7 +68,7 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
       if (timerInterval.current) clearInterval(timerInterval.current);
       if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
     };
-  }, [playerStore]);
+  }, [playerStore, answerMode]);
 
   // Timer loop - update every 100ms
   useEffect(() => {
@@ -130,6 +133,8 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
       
       const result = session.submitAnswer(answer, responseTime);
 
+      setTypedAnswer("");
+
       // Show feedback briefly
       setFeedback({
         questionId: currentQuestion.id,
@@ -162,12 +167,26 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
     [session, gameState, currentQuestion, handleSessionEnd]
   );
 
+  const handleNumberSubmit = useCallback(() => {
+    if (typedAnswer.trim() === "") {
+      return;
+    }
+
+    const parsed = Number(typedAnswer);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    handleAnswerSubmit(parsed);
+  }, [typedAnswer, handleAnswerSubmit]);
+
   /**
    * Handle play again - restart game
    */
   const handlePlayAgain = useCallback(() => {
     const newSession = new CrystalPopSession(
-      playerStore.getAdaptiveDifficulty()
+      playerStore.getAdaptiveDifficulty(),
+      answerMode
     );
     newSession.initialize();
     setSession(newSession);
@@ -176,8 +195,9 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
     setGameState("playing");
     setTimeRemaining(90000);
     setFeedback(null);
+    setTypedAnswer("");
     skillDeltaRef.current = 0;
-  }, [playerStore]);
+  }, [playerStore, answerMode]);
 
   /**
    * Handle return to home
@@ -261,33 +281,59 @@ export const CrystalPopGame: React.FC<{ onExit?: () => void }> = ({
         </div>
       </div>
 
-      {/* Answer Buttons - 2x2 Grid */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 max-w-[400px] mx-auto w-full">
-        {currentQuestion?.multipleChoiceOptions?.map((answer) => (
-          <motion.div
-            key={answer}
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ type: "spring" }}
-          >
-            <AnswerButton
-              value={answer}
-              disabled={gameState !== "playing" || !!feedback}
-              isCorrect={answer === currentQuestion.correctAnswer}
-              showResult={
-                feedback?.questionId === currentQuestion.id &&
-                answer === currentQuestion.correctAnswer
+      {answerMode === "numberEntry" && Number.isFinite(currentQuestion?.correctAnswer ?? NaN) ? (
+        <div className="max-w-[420px] mx-auto w-full flex gap-2 mb-6">
+          <input
+            type="number"
+            inputMode="numeric"
+            value={typedAnswer}
+            onChange={(event) => setTypedAnswer(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                handleNumberSubmit();
               }
-              onClick={handleAnswerSubmit}
-            />
-          </motion.div>
-        ))}
-      </div>
+            }}
+            className="flex-1 bg-white text-gray-900 text-3xl font-bold py-4 px-4 rounded-lg"
+            placeholder="Type answer"
+            disabled={gameState !== "playing" || !!feedback}
+          />
+          <button
+            onClick={handleNumberSubmit}
+            disabled={gameState !== "playing" || !!feedback || typedAnswer.trim() === ""}
+            className="bg-blue-500 hover:bg-blue-600 text-black font-bold py-4 px-6 rounded-lg disabled:opacity-50"
+          >
+            Submit
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 max-w-[400px] mx-auto w-full">
+          {currentQuestion?.multipleChoiceOptions?.map((answer) => (
+            <motion.div
+              key={answer}
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ type: "spring" }}
+            >
+              <AnswerButton
+                value={answer}
+                disabled={gameState !== "playing" || !!feedback}
+                isCorrect={answer === currentQuestion.correctAnswer}
+                showResult={
+                  feedback?.questionId === currentQuestion.id &&
+                  answer === currentQuestion.correctAnswer
+                }
+                onClick={handleAnswerSubmit}
+              />
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       {/* Results Screen - shown on finish */}
       {gameState === "finished" && result && (
         <ResultsScreen
           result={result}
+          answerMode={answerMode}
           skillDelta={skillDeltaRef.current}
           onPlayAgain={handlePlayAgain}
           onReturn={handleReturn}

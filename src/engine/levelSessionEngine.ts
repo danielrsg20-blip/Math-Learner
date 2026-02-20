@@ -4,6 +4,7 @@
  */
 
 import {
+  type AnswerMode,
   DifficultyTier,
   type GradeTag,
   type MathQuestion,
@@ -44,6 +45,7 @@ function questionKey(question: MathQuestion): string {
 
 export class LevelSession {
   private level: LevelDefinition;
+  private answerMode: AnswerMode;
   private startTimeMs: number = 0;
   private endTimeMs: number | null = null;
   private score: number = 0;
@@ -55,8 +57,13 @@ export class LevelSession {
   private answerLog: LevelAnswerRecord[] = [];
   private ended: boolean = false;
 
-  constructor(level: LevelDefinition) {
+  constructor(level: LevelDefinition, answerMode: AnswerMode = "multipleChoice") {
     this.level = level;
+    this.answerMode = answerMode;
+  }
+
+  public getAnswerMode(): AnswerMode {
+    return this.answerMode;
   }
 
   public initialize(): void {
@@ -156,7 +163,12 @@ export class LevelSession {
       const operation: Operation = randomPick(this.level.allowedOperations);
       const difficulty = gradeToDifficulty(gradeTag);
 
-      const candidate = generateQuestion(operation, difficulty, true, { gradeTag });
+      const candidate = generateQuestion(
+        operation,
+        difficulty,
+        this.answerMode === "multipleChoice",
+        { gradeTag }
+      );
       const key = questionKey(candidate);
 
       if (!this.seenQuestionKeys.has(key)) {
@@ -194,6 +206,7 @@ export class LevelSession {
     return {
       levelId: this.level.id,
       levelNumber: this.level.levelNumber,
+      answerMode: this.answerMode,
       score: this.score,
       accuracy: calculateAccuracy(this.correctAnswers, this.totalAnswered),
       completionTimeMs: Math.max(0, this.endTimeMs - this.startTimeMs),

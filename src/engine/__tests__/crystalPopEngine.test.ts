@@ -434,4 +434,19 @@ describe("Crystal Pop Engine", () => {
       expect(displayStats.timeRemainingSec).toBeGreaterThan(0);
     });
   });
+
+  describe("Answer Modes", () => {
+    it("supports number-entry mode question generation", () => {
+      const numberEntrySession = new CrystalPopSession(
+        DifficultyTier.Easy,
+        "numberEntry"
+      );
+      numberEntrySession.initialize();
+
+      const question = numberEntrySession.getCurrentQuestion();
+      expect(question).toBeDefined();
+      expect(question?.multipleChoiceOptions).toBeUndefined();
+      expect(numberEntrySession.getAnswerMode()).toBe("numberEntry");
+    });
+  });
 });

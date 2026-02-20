@@ -1,9 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import type { CrystalPopSessionResult } from "../../../types/player";
+import type { AnswerMode } from "../../../types/math";
 
 interface ResultsScreenProps {
   result: CrystalPopSessionResult;
+  answerMode: AnswerMode;
   skillDelta: number;
   onPlayAgain: () => void;
   onReturn: () => void;
@@ -15,10 +17,18 @@ interface ResultsScreenProps {
  */
 export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   result,
+  answerMode,
   skillDelta,
   onPlayAgain,
   onReturn,
 }) => {
+  const modeLabel =
+    answerMode === "numberEntry" ? "Number Entry" : "Multiple Choice";
+  const modeBadgeClass =
+    answerMode === "numberEntry"
+      ? "bg-emerald-500/30 text-emerald-200 border border-emerald-300/40"
+      : "bg-blue-500/30 text-blue-100 border border-blue-300/40";
+
   const statsVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
@@ -51,6 +61,9 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             {result.accuracy >= 80 ? "🎉 Excellent!" : "Good Job!"}
           </h2>
           <p className="text-gray-300">Session Complete</p>
+          <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${modeBadgeClass}`}>
+            Mode: {modeLabel}
+          </div>
         </motion.div>
 
         {/* Stats Grid */}

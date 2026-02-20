@@ -22,6 +22,8 @@ export enum DifficultyTier {
 
 export type AnswerFormat = "freeform" | "multipleChoice";
 
+export type AnswerMode = "multipleChoice" | "numberEntry";
+
 /**
  * Represents a single math question with operands and answer options
  */

@@ -4,6 +4,7 @@
  */
 
 import type {
+  AnswerMode,
   DifficultyTier,
   MathQuestion,
   Operation,
@@ -104,6 +105,7 @@ function calculateAccuracy(
 export class CrystalPopSession {
   private sessionId: string;
   private difficulty: DifficultyTier;
+  private answerMode: AnswerMode;
   private durationSeconds: number;
   private startTime: number = 0;
   private endTime: number | null = null;
@@ -124,11 +126,24 @@ export class CrystalPopSession {
    */
   constructor(
     difficulty: DifficultyTier,
-    durationSeconds: number = CRYSTAL_POP.DURATION_SECONDS
+    answerModeOrDuration: AnswerMode | number = "multipleChoice",
+    durationSecondsOverride?: number
   ) {
     this.sessionId = generateSessionId();
     this.difficulty = difficulty;
-    this.durationSeconds = durationSeconds;
+
+    if (typeof answerModeOrDuration === "number") {
+      this.answerMode = "multipleChoice";
+      this.durationSeconds = answerModeOrDuration;
+    } else {
+      this.answerMode = answerModeOrDuration;
+      this.durationSeconds =
+        durationSecondsOverride ?? CRYSTAL_POP.DURATION_SECONDS;
+    }
+  }
+
+  public getAnswerMode(): AnswerMode {
+    return this.answerMode;
   }
 
   /**
@@ -153,7 +168,7 @@ export class CrystalPopSession {
     this.currentQuestion = generateQuestion(
       selectedOp,
       this.difficulty,
-      true // include multiple choice
+      this.answerMode === "multipleChoice"
     );
 
     return this.currentQuestion;

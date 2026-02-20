@@ -6,6 +6,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { LEVEL_DEFINITIONS } from "../engine/levelConfig";
 import type { LevelAttemptResult, LevelProgress } from "../types/levels";
+import type { AnswerMode } from "../types/math";
+
+const ANSWER_MODES: AnswerMode[] = ["multipleChoice", "numberEntry"];
 
 interface LevelsStore {
   selectedLevelNumber: number | null;
@@ -20,6 +23,26 @@ interface LevelsStore {
 
 function createInitialProgress(): Record<number, LevelProgress> {
   return LEVEL_DEFINITIONS.reduce<Record<number, LevelProgress>>((acc, level) => {
+    const emptyByMode = ANSWER_MODES.reduce<LevelProgress["bestByMode"]>((modeAcc, mode) => {
+      modeAcc[mode] = {
+        bestScore: 0,
+        bestAccuracy: 0,
+        bestCompletionTimeMs: null,
+      };
+      return modeAcc;
+    }, {
+      multipleChoice: {
+        bestScore: 0,
+        bestAccuracy: 0,
+        bestCompletionTimeMs: null,
+      },
+      numberEntry: {
+        bestScore: 0,
+        bestAccuracy: 0,
+        bestCompletionTimeMs: null,
+      },
+    });
+
     acc[level.levelNumber] = {
       levelId: level.id,
       levelNumber: level.levelNumber,
@@ -28,6 +51,7 @@ function createInitialProgress(): Record<number, LevelProgress> {
       bestScore: 0,
       bestAccuracy: 0,
       bestCompletionTimeMs: null,
+      bestByMode: emptyByMode,
       completedAt: null,
     };
     return acc;
@@ -56,6 +80,36 @@ function isBetterAttempt(candidate: LevelAttemptResult, current: LevelProgress):
   }
 
   return candidate.accuracy > current.bestAccuracy;
+}
+
+function isBetterModeAttempt(
+  candidate: LevelAttemptResult,
+  current: LevelProgress,
+  mode: AnswerMode
+): boolean {
+  const currentByMode = current.bestByMode[mode];
+
+  if (candidate.score > currentByMode.bestScore) {
+    return true;
+  }
+  if (candidate.score < currentByMode.bestScore) {
+    return false;
+  }
+
+  const currentTime = currentByMode.bestCompletionTimeMs;
+  if (currentTime === null) {
+    return true;
+  }
+
+  if (candidate.completionTimeMs < currentTime) {
+    return true;
+  }
+
+  if (candidate.completionTimeMs > currentTime) {
+    return false;
+  }
+
+  return candidate.accuracy > currentByMode.bestAccuracy;
 }
 
 const INITIAL_PROGRESS = createInitialProgress();
@@ -106,6 +160,17 @@ export const useLevelsStore = create<LevelsStore>()(
               next.bestAccuracy = result.accuracy;
               next.bestCompletionTimeMs = result.completionTimeMs;
             }
+
+            if (isBetterModeAttempt(result, current, result.answerMode)) {
+              next.bestByMode = {
+                ...next.bestByMode,
+                [result.answerMode]: {
+                  bestScore: result.score,
+                  bestAccuracy: result.accuracy,
+                  bestCompletionTimeMs: result.completionTimeMs,
+                },
+              };
+            }
           }
 
           const updatedProgress = {
@@ -141,7 +206,75 @@ export const useLevelsStore = create<LevelsStore>()(
     }),
     {
       name: "levels-store",
-      version: 1,
+      version: 2,
+      migrate: (persistedState: unknown) => {
+        const state = persistedState as Partial<LevelsStore> | undefined;
+        if (!state) {
+          return {
+            selectedLevelNumber: 1,
+            progressByLevel: createInitialProgress(),
+            attempts: [],
+          };
+        }
+
+        const nextProgress = createInitialProgress();
+
+        if (state.progressByLevel) {
+          for (const [levelNumberString, progress] of Object.entries(
+            state.progressByLevel
+          )) {
+            const levelNumber = Number(levelNumberString);
+            if (!nextProgress[levelNumber] || !progress) {
+              continue;
+            }
+
+            const safeProgress = progress as LevelProgress;
+            nextProgress[levelNumber] = {
+              ...nextProgress[levelNumber],
+              ...safeProgress,
+              bestByMode: {
+                multipleChoice: {
+                  bestScore:
+                    safeProgress.bestByMode?.multipleChoice?.bestScore ??
+                    safeProgress.bestScore ??
+                    0,
+                  bestAccuracy:
+                    safeProgress.bestByMode?.multipleChoice?.bestAccuracy ??
+                    safeProgress.bestAccuracy ??
+                    0,
+                  bestCompletionTimeMs:
+                    safeProgress.bestByMode?.multipleChoice?.bestCompletionTimeMs ??
+                    safeProgress.bestCompletionTimeMs ??
+                    null,
+                },
+                numberEntry: {
+                  bestScore:
+                    safeProgress.bestByMode?.numberEntry?.bestScore ?? 0,
+                  bestAccuracy:
+                    safeProgress.bestByMode?.numberEntry?.bestAccuracy ?? 0,
+                  bestCompletionTimeMs:
+                    safeProgress.bestByMode?.numberEntry?.bestCompletionTimeMs ??
+                    null,
+                },
+              },
+            };
+          }
+        }
+
+        const attempts = (state.attempts ?? []).map((attempt) => ({
+          ...attempt,
+          answerMode:
+            attempt.answerMode === "numberEntry"
+              ? "numberEntry"
+              : "multipleChoice",
+        }));
+
+        return {
+          selectedLevelNumber: state.selectedLevelNumber ?? 1,
+          progressByLevel: nextProgress,
+          attempts,
+        };
+      },
     }
   )
 );

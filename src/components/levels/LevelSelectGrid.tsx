@@ -1,13 +1,16 @@
 import React from "react";
 import { LEVEL_DEFINITIONS } from "../../engine/levelConfig";
 import { useLevelsStore } from "../../store/useLevelsStore";
+import type { AnswerMode } from "../../types/math";
 
 interface LevelSelectGridProps {
   onStartLevel: (levelNumber: number) => void;
+  selectedAnswerMode: AnswerMode;
 }
 
 export const LevelSelectGrid: React.FC<LevelSelectGridProps> = ({
   onStartLevel,
+  selectedAnswerMode,
 }) => {
   const { progressByLevel, isLevelUnlocked } = useLevelsStore();
 
@@ -17,6 +20,7 @@ export const LevelSelectGrid: React.FC<LevelSelectGridProps> = ({
         const progress = progressByLevel[level.levelNumber];
         const locked = !isLevelUnlocked(level.levelNumber);
         const completed = progress?.status === "completed";
+        const bestForMode = progress?.bestByMode[selectedAnswerMode];
 
         return (
           <div
@@ -44,10 +48,10 @@ export const LevelSelectGrid: React.FC<LevelSelectGridProps> = ({
 
             {completed && (
               <div className="bg-black/20 rounded p-2 mb-3 text-sm text-white">
-                <div>High Score: {progress.bestScore}</div>
-                <div>Best Accuracy: {progress.bestAccuracy}%</div>
+                <div>High Score: {bestForMode?.bestScore ?? 0}</div>
+                <div>Best Accuracy: {bestForMode?.bestAccuracy ?? 0}%</div>
                 <div>
-                  Best Time: {progress.bestCompletionTimeMs ? `${Math.ceil(progress.bestCompletionTimeMs / 1000)}s` : "--"}
+                  Best Time: {bestForMode?.bestCompletionTimeMs ? `${Math.ceil(bestForMode.bestCompletionTimeMs / 1000)}s` : "--"}
                 </div>
               </div>
             )}

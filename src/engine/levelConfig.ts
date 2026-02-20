@@ -7,6 +7,15 @@ import type { GradeTag, Operation } from "../types/math";
 
 const DEFAULT_REQUIRED_CORRECT = 10;
 const DEFAULT_TIME_LIMIT_SECONDS = 90;
+const TIME_INCREMENT_EVERY_TWO_LEVELS_SECONDS = 60;
+
+function getTimeLimitForLevel(levelNumber: number): number {
+  const pairIndex = Math.floor((levelNumber - 1) / 2);
+  return (
+    DEFAULT_TIME_LIMIT_SECONDS +
+    pairIndex * TIME_INCREMENT_EVERY_TWO_LEVELS_SECONDS
+  );
+}
 
 function createLevel(
   levelNumber: number,
@@ -20,7 +29,7 @@ function createLevel(
     gradeTags,
     allowedOperations,
     requiredCorrectAnswers: DEFAULT_REQUIRED_CORRECT,
-    timeLimitSeconds: DEFAULT_TIME_LIMIT_SECONDS,
+    timeLimitSeconds: getTimeLimitForLevel(levelNumber),
   };
 }
 
