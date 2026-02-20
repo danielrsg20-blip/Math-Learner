@@ -2,6 +2,12 @@ import React, { useEffect, useState } from "react";
 
 interface ConfettiExplosionProps {
   trigger: boolean;
+  particleCount?: number;
+  radiusDistance?: number;
+  fontSizeRem?: number;
+  durationMs?: number;
+  originX?: string;
+  originY?: string;
 }
 
 interface CandyParticle {
@@ -18,6 +24,12 @@ interface CandyParticle {
  */
 export const ConfettiExplosion: React.FC<ConfettiExplosionProps> = ({
   trigger,
+  particleCount = 20,
+  radiusDistance = 320,
+  fontSizeRem = 3,
+  durationMs = 1680,
+  originX = "50%",
+  originY = "50%",
 }) => {
   const [candyParticles, setCandyParticles] = useState<CandyParticle[]>([]);
   const candyEmojis = ["🍬", "🍭", "🍫", "🍩", "🧁", "🍰", "🎈"];
@@ -27,8 +39,6 @@ export const ConfettiExplosion: React.FC<ConfettiExplosionProps> = ({
 
     // Create candy emoji particles radiating from center
     const particles: CandyParticle[] = [];
-    const particleCount = 20;
-    const radiusDistance = 320;
     
     for (let i = 0; i < particleCount; i++) {
       const angle = (360 / particleCount) * i;
@@ -49,7 +59,7 @@ export const ConfettiExplosion: React.FC<ConfettiExplosionProps> = ({
     // Clear candies after animation completes
     const timer = setTimeout(() => {
       setCandyParticles([]);
-    }, 1680);
+    }, durationMs);
 
     return () => clearTimeout(timer);
   }, [trigger]);
@@ -63,12 +73,12 @@ export const ConfettiExplosion: React.FC<ConfettiExplosionProps> = ({
           key={particle.id}
           className="absolute select-none"
           style={{
-            left: "50%",
-            top: "50%",
+            left: originX,
+            top: originY,
             transform: "translate(-50%, -50%)",
-            animation: `burst-out 1.6s ease-out forwards`,
+            animation: `burst-out ${durationMs / 1000}s ease-out forwards`,
             animationDelay: `${particle.delay}s`,
-            fontSize: "3rem",
+            fontSize: `${fontSizeRem}rem`,
             "--tx": `${particle.endX}px`,
             "--ty": `${particle.endY}px`,
           } as React.CSSProperties & { "--tx": string; "--ty": string }}

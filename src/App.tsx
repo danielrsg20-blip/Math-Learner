@@ -23,20 +23,22 @@ function App() {
       )}
 
       {currentPage === "levels" && (
-        <div className="w-full h-screen bg-gradient-to-b from-purple-700 to-blue-800 flex flex-col items-center justify-center p-6 gap-6">
-          <h1 className="text-4xl font-bold text-white">Select a Level</h1>
-          <LevelSelectGrid
-            onStartLevel={(levelNumber) => {
-              setSelectedLevel(levelNumber);
-              setCurrentPage("level-play");
-            }}
-          />
-          <button
-            onClick={() => setCurrentPage("home")}
-            className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg"
-          >
-            Back Home
-          </button>
+        <div className="w-full h-screen bg-gradient-to-b from-purple-700 to-blue-800 overflow-y-auto">
+          <div className="min-h-full flex flex-col items-center p-6 gap-6">
+            <h1 className="text-4xl font-bold text-white">Select a Level</h1>
+            <LevelSelectGrid
+              onStartLevel={(levelNumber) => {
+                setSelectedLevel(levelNumber);
+                setCurrentPage("level-play");
+              }}
+            />
+            <button
+              onClick={() => setCurrentPage("home")}
+              className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-3 px-6 rounded-lg"
+            >
+              Back Home
+            </button>
+          </div>
         </div>
       )}
 
@@ -54,13 +56,13 @@ function App() {
           </h1>
           <button
             onClick={() => setCurrentPage("levels")}
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-lg text-2xl transition-colors"
+            className="bg-green-500 hover:bg-green-600 text-black font-bold py-4 px-8 rounded-lg text-2xl transition-colors"
           >
             Play Levels
           </button>
           <button
             onClick={() => setCurrentPage("crystal-pop")}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-lg text-2xl transition-colors"
+            className="bg-blue-500 hover:bg-blue-600 text-black font-bold py-4 px-8 rounded-lg text-2xl transition-colors"
           >
             Play Crystal Pop
           </button>

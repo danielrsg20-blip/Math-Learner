@@ -3,6 +3,7 @@ import { LevelSession } from "../../engine/levelSessionEngine";
 import { getLevelDefinition } from "../../engine/levelConfig";
 import { useLevelsStore } from "../../store/useLevelsStore";
 import type { LevelAttemptResult } from "../../types/levels";
+import { ConfettiExplosion } from "../miniGames/CrystalPop/ConfettiExplosion";
 
 interface LevelGameContainerProps {
   levelNumber: number;
@@ -23,14 +24,29 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
   const [remainingMs, setRemainingMs] = useState(level.timeLimitSeconds * 1000);
   const [result, setResult] = useState<LevelAttemptResult | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [triggerConfetti, setTriggerConfetti] = useState(false);
+  const [triggerCompletionConfetti, setTriggerCompletionConfetti] = useState(false);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completionConfettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const finalizeSession = useCallback(
     (sessionToEnd: LevelSession) => {
       const finalResult = sessionToEnd.endSession();
       setResult(finalResult);
       recordAttempt(finalResult);
+
+      if (finalResult.passed) {
+        setTriggerCompletionConfetti(true);
+        if (completionConfettiTimeoutRef.current) {
+          clearTimeout(completionConfettiTimeoutRef.current);
+        }
+        completionConfettiTimeoutRef.current = setTimeout(() => {
+          setTriggerCompletionConfetti(false);
+        }, 2200);
+      }
+
       setPhase("finished");
 
       if (intervalRef.current) {
@@ -49,6 +65,12 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+      }
+      if (confettiTimeoutRef.current) {
+        clearTimeout(confettiTimeoutRef.current);
+      }
+      if (completionConfettiTimeoutRef.current) {
+        clearTimeout(completionConfettiTimeoutRef.current);
       }
     };
   }, [level]);
@@ -83,6 +105,16 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
       const answerResult = session.submitAnswer(value);
       setFeedback(answerResult.isCorrect ? "correct" : "wrong");
 
+      if (answerResult.isCorrect) {
+        setTriggerConfetti(true);
+        if (confettiTimeoutRef.current) {
+          clearTimeout(confettiTimeoutRef.current);
+        }
+        confettiTimeoutRef.current = setTimeout(() => {
+          setTriggerConfetti(false);
+        }, 1760);
+      }
+
       setTimeout(() => setFeedback(null), 250);
 
       if (answerResult.passed) {
@@ -106,11 +138,25 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
 
   return (
     <div className="w-full h-screen bg-gradient-to-b from-blue-700 to-purple-800 p-4 text-white">
+      <ConfettiExplosion
+        trigger={triggerConfetti}
+        originX="50%"
+        originY="35%"
+      />
+      <ConfettiExplosion
+        trigger={triggerCompletionConfetti}
+        particleCount={48}
+        radiusDistance={440}
+        fontSizeRem={3.6}
+        durationMs={2200}
+        originX="50%"
+        originY="35%"
+      />
       <div className="max-w-4xl mx-auto h-full flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <button
             onClick={onBack}
-            className="bg-gray-800/80 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold"
+            className="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg font-semibold"
           >
             Back
           </button>
@@ -129,9 +175,6 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
         </div>
 
         <div className="bg-white/90 text-gray-900 rounded-xl p-8 text-center mb-4">
-          <div className="text-sm uppercase tracking-wide text-gray-600 mb-2">
-            {question?.gradeTag ?? "grade"}
-          </div>
           <div className="text-5xl font-bold">{question?.prompt}</div>
         </div>
 
@@ -169,7 +212,7 @@ export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
               </div>
               <button
                 onClick={onBack}
-                className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg font-semibold"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-black py-2 rounded-lg font-semibold"
               >
                 Back to Levels
               </button>

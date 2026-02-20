@@ -97,7 +97,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         {/* Buttons */}
         <div className="flex gap-3 pt-4">
           <motion.button
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-black font-bold py-3 rounded-lg transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onPlayAgain}
@@ -105,7 +105,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             Play Again
           </motion.button>
           <motion.button
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition-colors"
+            className="flex-1 bg-gray-300 hover:bg-gray-400 text-black font-bold py-3 rounded-lg transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onReturn}

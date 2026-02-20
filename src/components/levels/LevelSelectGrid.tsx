@@ -36,9 +36,6 @@ export const LevelSelectGrid: React.FC<LevelSelectGridProps> = ({
             </div>
 
             <div className="text-sm text-gray-100 mb-1">
-              Grades: {level.gradeTags.join(" + ")}
-            </div>
-            <div className="text-sm text-gray-100 mb-1">
               Goal: {level.requiredCorrectAnswers} correct
             </div>
             <div className="text-sm text-gray-100 mb-3">
@@ -58,8 +55,8 @@ export const LevelSelectGrid: React.FC<LevelSelectGridProps> = ({
             <button
               className={`w-full font-bold py-2 rounded-lg transition-colors ${
                 locked
-                  ? "bg-gray-600 text-gray-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
+                  ? "bg-gray-300 text-black cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600 text-black"
               }`}
               disabled={locked}
               onClick={() => onStartLevel(level.levelNumber)}
