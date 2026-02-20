@@ -1,0 +1,184 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LevelSession } from "../../engine/levelSessionEngine";
+import { getLevelDefinition } from "../../engine/levelConfig";
+import { useLevelsStore } from "../../store/useLevelsStore";
+import type { LevelAttemptResult } from "../../types/levels";
+
+interface LevelGameContainerProps {
+  levelNumber: number;
+  onBack: () => void;
+}
+
+type Phase = "loading" | "playing" | "finished";
+
+export const LevelGameContainer: React.FC<LevelGameContainerProps> = ({
+  levelNumber,
+  onBack,
+}) => {
+  const level = useMemo(() => getLevelDefinition(levelNumber), [levelNumber]);
+  const recordAttempt = useLevelsStore((state) => state.recordAttempt);
+
+  const [phase, setPhase] = useState<Phase>("loading");
+  const [session, setSession] = useState<LevelSession | null>(null);
+  const [remainingMs, setRemainingMs] = useState(level.timeLimitSeconds * 1000);
+  const [result, setResult] = useState<LevelAttemptResult | null>(null);
+  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const finalizeSession = useCallback(
+    (sessionToEnd: LevelSession) => {
+      const finalResult = sessionToEnd.endSession();
+      setResult(finalResult);
+      recordAttempt(finalResult);
+      setPhase("finished");
+
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    },
+    [recordAttempt]
+  );
+
+  useEffect(() => {
+    const newSession = new LevelSession(level);
+    newSession.initialize();
+    setSession(newSession);
+    setPhase("playing");
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [level]);
+
+  useEffect(() => {
+    if (!session || phase !== "playing") {
+      return;
+    }
+
+    intervalRef.current = setInterval(() => {
+      const remaining = session.getRemainingMs();
+      setRemainingMs(remaining);
+
+      if (remaining <= 0 && !session.hasPassed()) {
+        finalizeSession(session);
+      }
+    }, 100);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [session, phase, finalizeSession]);
+
+  const handleAnswer = useCallback(
+    (value: number) => {
+      if (!session || phase !== "playing") {
+        return;
+      }
+
+      const answerResult = session.submitAnswer(value);
+      setFeedback(answerResult.isCorrect ? "correct" : "wrong");
+
+      setTimeout(() => setFeedback(null), 250);
+
+      if (answerResult.passed) {
+        finalizeSession(session);
+      }
+    },
+    [session, phase, finalizeSession]
+  );
+
+  if (phase === "loading" || !session) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-blue-900 text-white text-2xl font-bold">
+        Loading level...
+      </div>
+    );
+  }
+
+  const question = session.getCurrentQuestion();
+  const stats = session.getStats();
+  const secondsRemaining = Math.ceil(remainingMs / 1000);
+
+  return (
+    <div className="w-full h-screen bg-gradient-to-b from-blue-700 to-purple-800 p-4 text-white">
+      <div className="max-w-4xl mx-auto h-full flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={onBack}
+            className="bg-gray-800/80 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold"
+          >
+            Back
+          </button>
+          <div className="text-xl font-bold">Level {level.levelNumber}</div>
+          <div className="text-right">
+            <div className="text-sm text-gray-200">Score</div>
+            <div className="text-2xl font-bold">{stats.score}</div>
+          </div>
+        </div>
+
+        <div className="bg-black/20 rounded-xl p-4 mb-4 text-center">
+          <div className="text-lg font-semibold">
+            {stats.correctAnswers}/{level.requiredCorrectAnswers} correct – {secondsRemaining} seconds remaining
+          </div>
+          <div className="text-sm text-gray-200 mt-1">Accuracy: {stats.accuracy}%</div>
+        </div>
+
+        <div className="bg-white/90 text-gray-900 rounded-xl p-8 text-center mb-4">
+          <div className="text-sm uppercase tracking-wide text-gray-600 mb-2">
+            {question?.gradeTag ?? "grade"}
+          </div>
+          <div className="text-5xl font-bold">{question?.prompt}</div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto w-full">
+          {question?.multipleChoiceOptions?.map((answer) => (
+            <button
+              key={`${question.id}-${answer}`}
+              onClick={() => handleAnswer(answer)}
+              className="bg-white text-gray-900 text-3xl font-bold py-6 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              {answer}
+            </button>
+          ))}
+        </div>
+
+        {feedback && phase === "playing" && (
+          <div className={`text-center mt-4 text-lg font-bold ${feedback === "correct" ? "text-green-200" : "text-red-200"}`}>
+            {feedback === "correct" ? "Correct!" : "Try the next one!"}
+          </div>
+        )}
+
+        {phase === "finished" && result && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
+            <div className="bg-gray-900 rounded-xl p-6 w-full max-w-md space-y-3">
+              <h2 className="text-2xl font-bold text-white text-center">
+                {result.passed ? "Level Complete!" : "Time Up"}
+              </h2>
+              <div className="text-white">
+                <div>Score: {result.score}</div>
+                <div>Accuracy: {result.accuracy}%</div>
+                <div>
+                  Progress: {result.correctAnswers}/{level.requiredCorrectAnswers} correct
+                </div>
+                <div>Completion Time: {Math.ceil(result.completionTimeMs / 1000)}s</div>
+              </div>
+              <button
+                onClick={onBack}
+                className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg font-semibold"
+              >
+                Back to Levels
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default LevelGameContainer;
