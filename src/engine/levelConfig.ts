@@ -44,6 +44,16 @@ export const LEVEL_DEFINITIONS: LevelDefinition[] = [
   createLevel(8, ["grade4", "grade5"], ["addition", "subtraction", "multiplication"]),
   createLevel(9, ["grade5"], ["addition", "subtraction", "multiplication"]),
   createLevel(10, ["grade5", "grade6"], ["addition", "subtraction", "multiplication"]),
+  createLevel(11, ["grade6"], ["subtraction", "multiplication"]),
+  createLevel(12, ["grade5", "grade6"], ["addition", "subtraction", "multiplication"]),
+  createLevel(13, ["grade6"], ["subtraction", "multiplication"]),
+  createLevel(14, ["grade4", "grade6"], ["subtraction", "multiplication"]),
+  createLevel(15, ["grade6"], ["multiplication"]),
+  createLevel(16, ["grade5", "grade6"], ["subtraction", "multiplication"]),
+  createLevel(17, ["grade6"], ["multiplication"]),
+  createLevel(18, ["grade4", "grade5", "grade6"], ["subtraction", "multiplication"]),
+  createLevel(19, ["grade6"], ["multiplication"]),
+  createLevel(20, ["grade5", "grade6"], ["subtraction", "multiplication"]),
 ];
 
 export function getLevelDefinition(levelNumber: number): LevelDefinition {
